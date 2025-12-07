@@ -10,7 +10,7 @@ export const MetricConfig: Record<MetricKey, { field: string; colors: any[]; tit
   rent_income_ratio: {
     field: "rent_income_ratio",
     title: "Economic Burden (Rent / Income)",
-    unit: "",       // 或 "%"
+    unit: "%",       // 或 "%"
     colors: [
       18.1, "#ffffd4",
       22.2, "#fee391",
@@ -23,8 +23,8 @@ export const MetricConfig: Record<MetricKey, { field: string; colors: any[]; tit
 
   park_area_ratio: {
     field: "park_area_ratio",
-    title: "Park Area Ratio",
-    unit: "",
+    title: "% of Park Area in Neighborhood",
+    unit: "%",
     colors: [
       0.05, "#ffffcc",
       3.3, "#d9f0a3",
