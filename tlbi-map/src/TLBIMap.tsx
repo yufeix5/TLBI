@@ -92,7 +92,7 @@ export default function TLBIMap() {
 
     const map = new mapboxgl.Map({
       container: mapContainer.current,
-      style: "mapbox://styles/mapbox/light-v11",
+      style: "mapbox://styles/lexixia/cmivgp3oj006n01qngumgf82n",
       center: [-73.94, 40.72],
       zoom: 9.8,
     });
@@ -117,7 +117,7 @@ export default function TLBIMap() {
         source: "cd",
         paint: {
           "fill-color": getPaint(metric),
-          "fill-opacity": 0.75,
+          "fill-opacity": 0.95,
         },
       });
 
