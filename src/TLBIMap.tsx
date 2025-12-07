@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import type { MetricKey } from "./TLBILayerConfig";
 import { MetricConfig } from "./TLBILayerConfig";
+import * as ss from "simple-statistics";
+
 
 mapboxgl.accessToken = "pk.eyJ1IjoibGV4aXhpYSIsImEiOiJjbDhwaGJqdXowN243M3BvMDNxYXl1bjNuIn0.ilolMGy181XT-Bnt0hMaYg";
 
@@ -20,6 +22,21 @@ export default function TLBIMap() {
 
   const [rawGeo, setRawGeo] = useState<any>(null);
   const [selectedFeature, setSelectedFeature] = useState<any>(null);
+  const [tlbiBreaks, setTlbiBreaks] = useState<number[]>([]);
+
+
+  // ---------------------------------------------------------
+  // jenks natural breaks
+  // ---------------------------------------------------------
+  function jenksBreaks(values: number[], k = 6) {
+    const clean = values.filter(v => typeof v === "number" && !isNaN(v));
+    if (clean.length === 0) return [];
+
+    clean.sort((a,b)=>a-b);
+
+    const breaks = ss.jenks(clean, k);
+    return breaks;
+  }
 
   // ---------------------------------------------------------
   // Quantile scaling
@@ -100,7 +117,7 @@ export default function TLBIMap() {
     mapRef.current = map;
 
     map.on("load", async () => {
-      const res = await fetch("/cd_final_cleaned.geojson");
+      const res = await fetch(import.meta.env.BASE_URL + 'cd_final_cleaned.geojson')
       const geo = await res.json();
       setRawGeo(geo);
 
@@ -116,7 +133,7 @@ export default function TLBIMap() {
         type: "fill",
         source: "cd",
         paint: {
-          "fill-color": getPaint(metric),
+          "fill-color": getPaint(metric) as any,
           "fill-opacity": 0.95,
         },
       });
@@ -132,7 +149,14 @@ export default function TLBIMap() {
       });
 
       map.on("click", "cd-fill", (e) => {
-        setSelectedFeature(e.features?.[0]?.properties ?? null);
+        const p = e.features?.[0]?.properties;
+        if (p) {
+          console.log("Clicked TLBI:", p.TLBI, p);
+          setSelectedFeature(p);
+        } else {
+          console.log("Clicked TLBI: no feature");
+          setSelectedFeature(null);
+        }
       });
 
       map.on("click", (e) => {
@@ -151,26 +175,93 @@ export default function TLBIMap() {
   // ---------------------------------------------------------
   useEffect(() => {
     if (!rawGeo) return;
+    setSelectedFeature(null);
+
     const updated = computeTLBI(rawGeo);
 
+    // ---- ⭐ Compute Jenks breaks for TLBI ----
+    const values = updated.features.map((f:any) => f.properties.TLBI);
+    const bks = jenksBreaks(values, 6);
+    console.log("Jenks breaks:", bks);
+    setTlbiBreaks(bks);
+
+    // ---- Update GeoJSON ----
     const map = mapRef.current;
     const src = map?.getSource("cd") as mapboxgl.GeoJSONSource;
     if (src) src.setData(updated);
+
+    // ---- Update fill color ----
+    if (map?.getLayer("cd-fill")) {
+      if (metric === "TLBI") {
+        map.setPaintProperty("cd-fill", "fill-color", buildJenksExpression("TLBI", bks) as any);
+      }
+    }
   }, [wE, wA, wI, wC]);
+
+  // ---------------------------------------------------------
+  // Initial Jenks calculation when rawGeo loads
+  // ---------------------------------------------------------
+  useEffect(() => {
+    if (!rawGeo) return;
+
+    // 重新计算 TLBI
+    const updated = computeTLBI(rawGeo);
+
+    // 计算 Jenks breaks
+    const values = updated.features.map((f: any) => f.properties.TLBI);
+    const bks = jenksBreaks(values, 6);
+    console.log("Initial Jenks breaks:", bks);
+
+    setTlbiBreaks(bks);
+
+    // 更新 GeoJSON
+    const map = mapRef.current;
+    const src = map?.getSource("cd") as mapboxgl.GeoJSONSource;
+    if (src) src.setData(updated);
+
+    // 更新颜色
+    if (map?.getLayer("cd-fill")) {
+      map.setPaintProperty("cd-fill", "fill-color", buildJenksExpression("TLBI", bks) as any);
+    }
+  }, [rawGeo]);  
 
   // ---------------------------------------------------------
   // Update fill color when metric changes
   // ---------------------------------------------------------
-  function getPaint(metricKey: MetricKey): mapboxgl.ExpressionSpecification {
-    const cfg = MetricConfig[metricKey];
-    // Build the Mapbox expression and cast to the ExpressionSpecification type
-    return (["interpolate", ["linear"], ["coalesce", ["get", cfg.field], 0], ...cfg.colors] as unknown) as mapboxgl.ExpressionSpecification;
+  function buildJenksExpression(field: string, breaks: number[]) {
+    if (!breaks || breaks.length < 2) return "#ccc";
+
+    const colors = ["#2166ac", "#67a9cf", "#d1e5f0", "#fddbc7", "#ef8a62", "#b2182b"];
+
+    // step syntax: ["step", input, base_color, threshold1, color1, threshold2, color2, ...]
+    const exp: any[] = ["step", ["get", field], colors[0]];
+
+    // skip breaks[0] (min) and breaks[last] (max)
+    for (let i = 1; i < breaks.length - 1; i++) {
+      exp.push(breaks[i]);
+      exp.push(colors[i]);
+    }
+
+    return exp;
   }
+
+
+
+  function getPaint(metricKey: MetricKey): mapboxgl.ExpressionSpecification | string {
+    if (metricKey === "TLBI") {
+      return buildJenksExpression("TLBI", tlbiBreaks) as mapboxgl.ExpressionSpecification | string;
+    }
+
+    // 非 TLBI 继续用你的原始颜色配置
+    const cfg = MetricConfig[metricKey];
+    return ["interpolate", ["linear"], ["coalesce", ["get", cfg.field], 0], ...cfg.colors] as unknown as mapboxgl.ExpressionSpecification;
+  }
+
 
   useEffect(() => {
     const map = mapRef.current;
     if (map?.getLayer("cd-fill")) {
-      map.setPaintProperty("cd-fill", "fill-color", getPaint(metric));
+      map.setPaintProperty("cd-fill", "fill-color", getPaint(metric) as any);
     }
   }, [metric]);
   
@@ -316,44 +407,98 @@ export default function TLBIMap() {
     const cfg = MetricConfig[metric];
     const items = [];
 
-    for (let i = 0; i < cfg.colors.length; i += 2) {
-      items.push({
-        value: cfg.colors[i],
-        color: cfg.colors[i + 1],
-      });
+    if (metric !== "TLBI") {
+      // 非 TLBI 继续用你的原始颜色配置
+      for (let i = 0; i < cfg.colors.length; i += 2) {
+        items.push({
+          value: cfg.colors[i],
+          color: cfg.colors[i + 1],
+        });
+      }
+
+      return (
+        <div
+          style={{
+            position: "absolute",
+            bottom: 20,
+            left: 20,
+            background: "rgba(255,255,255,0.95)",
+            padding: 12,
+            borderRadius: 6,
+            boxShadow: "0 0 6px rgba(0,0,0,0.15)",
+            fontSize: 12,
+            width: 180,
+          }}
+        >
+          <b style={{ fontSize: 13 }}>{cfg.title}</b>
+
+          {cfg.unit && (
+            <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>
+              Unit: {cfg.unit}
+            </div>
+          )}
+
+          <div style={{ marginTop: 6 }}>
+            {items.map((it, i) => (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  marginTop: 4,
+                }}
+              >
+                <div
+                  style={{
+                    width: 18,
+                    height: 12,
+                    background: it.color,
+                    border: "1px solid #aaa",
+                    marginRight: 6,
+                  }}
+                />
+                {it.value} {cfg.unit}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
     }
 
-    return (
-      <div
-        style={{
-          position: "absolute",
-          bottom: 20,
-          left: 20,
-          background: "rgba(255,255,255,0.95)",
-          padding: 12,
-          borderRadius: 6,
-          boxShadow: "0 0 6px rgba(0,0,0,0.15)",
-          fontSize: 12,
-          width: 180,
-        }}
-      >
-        <b style={{ fontSize: 13 }}>{cfg.title}</b>
+      // ---- ⭐ TLBI Jenks legend ----
+    if (metric === "TLBI") {
+      if (!tlbiBreaks.length) return null;
 
-        {cfg.unit && (
-          <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>
-            Unit: {cfg.unit}
-          </div>
-        )}
+      const colors = ["#2166ac", "#67a9cf", "#d1e5f0", "#fddbc7", "#ef8a62", "#b2182b"];
 
-        <div style={{ marginTop: 6 }}>
-          {items.map((it, i) => (
+      const tlbiItems: any[] = [];
+      for (let i = 0; i < tlbiBreaks.length - 1; i++) {
+        tlbiItems.push({
+          color: colors[i],
+          label: `${tlbiBreaks[i].toFixed(2)} – ${tlbiBreaks[i + 1].toFixed(2)}`
+        });
+      }
+
+      return (
+        <div
+          style={{
+            position: "absolute",
+            bottom: 20,
+            left: 20,
+            background: "white",
+            padding: 12,
+            borderRadius: 6,
+            boxShadow: "0 0 6px rgba(0,0,0,0.15)",
+            fontSize: 12,
+            width: 200
+          }}
+        >
+          <b>Total Living Burden Index</b>
+
+          {tlbiItems.map((it, i) => (
             <div
               key={i}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                marginTop: 4,
-              }}
+              style={{ display: "flex", alignItems: "center", marginTop: 4 }}
             >
               <div
                 style={{
@@ -361,15 +506,17 @@ export default function TLBIMap() {
                   height: 12,
                   background: it.color,
                   border: "1px solid #aaa",
-                  marginRight: 6,
+                  marginRight: 6
                 }}
               />
-              {it.value} {cfg.unit}
+              {it.label}
             </div>
           ))}
         </div>
-      </div>
-    );
+      );
+    }
+
+
   }
 
 

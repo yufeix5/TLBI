@@ -64,19 +64,27 @@ export const MetricConfig: Record<MetricKey, { field: string; colors: any[]; tit
   },
 
 
-    TLBI: {
-    field: "TLBI",
-    title: "Total Living Burden Index",
-    unit: "",
+    // TLBI: {
+    // field: "TLBI",
+    // title: "Total Living Burden Index",
+    // unit: "",
 
-    colors: [
-        0.00, "#2166ac",  // green
-        0.20, "#67a9cf",  // light green
-        0.40, "#d1e5f0",  // yellow
-        0.60, "#fddbc7",  // orange
-        0.80, "#ef8a62",  // red
-        1.00, "#b2182b"   // deep red (stronger for top range)
-    ]
+    // colors: [
+    //     0.00, "#2166ac",  // green
+    //     0.20, "#67a9cf",  // light green
+    //     0.40, "#d1e5f0",  // yellow
+    //     0.60, "#fddbc7",  // orange
+    //     0.80, "#ef8a62",  // red
+    //     1.00, "#b2182b"   // deep red (stronger for top range)
+    // ]
+    // }
+
+      // ⚠ TLBI 不再写死 colors，由 TLBIMap 动态生成
+    TLBI: {
+      field: "TLBI",
+      title: "Total Living Burden Index",
+      unit: "",
+      colors: []  // 占位，实际颜色在 TLBIMap.tsx 中生成
     }
 
 
