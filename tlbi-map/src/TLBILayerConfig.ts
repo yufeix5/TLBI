@@ -12,13 +12,12 @@ export const MetricConfig: Record<MetricKey, { field: string; colors: any[]; tit
     title: "Economic Burden (Rent / Income)",
     unit: "",       // 或 "%"
     colors: [
-      0.00000, "#f7fbff",
-      0.22231, "#deebf7",
-      0.25110, "#c6dbef",
-      0.28102, "#9ecae1",
-      0.30245, "#6baed6",
-      0.35079, "#3182bd",
-      0.38786, "#08519c"
+      18.1, "#ffffd4",
+      22.2, "#fee391",
+      25.1, "#fec44f",
+      28.1, "#fe9929",
+      30.2, "#d95f0e",
+      35.1, "#993404"
     ]
   },
 
@@ -27,13 +26,12 @@ export const MetricConfig: Record<MetricKey, { field: string; colors: any[]; tit
     title: "Park Area Ratio",
     unit: "",
     colors: [
-      0.00056, "#f7fbff",
-      0.02623, "#deebf7",
-      0.06552, "#c6dbef",
-      0.11889, "#9ecae1",
-      0.15167, "#6baed6",
-      0.20861, "#3182bd",
-      0.95361, "#08519c"
+      0.05, "#ffffcc",
+      3.3, "#d9f0a3",
+      6.6, "#addd8e",
+      11.9, "#78c679",
+      15.2, "#31a354",
+      20.9, "#006837"
     ]
   },
 
@@ -42,41 +40,44 @@ export const MetricConfig: Record<MetricKey, { field: string; colors: any[]; tit
     title: "Number of Retail food Stores",
     unit: "per km²",
     colors: [
-      0.0000, "#f7fbff",
-      0.2420, "#deebf7",
-      0.8775, "#c6dbef",
-      1.5861, "#9ecae1",
-      2.3517, "#6baed6",
-      3.1742, "#3182bd",
-      5.1674, "#08519c"
+      0.15, "#f1eef6",
+      0.88, "#d4b9da",
+      1.59, "#c994c7",
+      2.35, "#df65b0",
+      3.17, "#dd1c77",
+      3.95, "#980043"
     ]
   },
 
   avg_commute_time: {
     field: "avg_commute_time",
-    title: "Average Commute Time",
+    title: "Average Travel Time to Work",
     unit: "minutes",
     colors: [
-      27.341, "#f7fbff",
-      29.836, "#deebf7",
-      34.476, "#c6dbef",
-      37.934, "#9ecae1",
-      44.456, "#6baed6",
-      47.675, "#3182bd",
-      54.459, "#08519c"
+        32, "#e5f4ed",   // ≤ 32  
+        38.9, "#7bc5ad", // 32–38.9 
+        44.9, "#4fa5b2", // 39–44.9
+        48.9, "#4169a6", // 45–48.9
+        53.9, "#2f3c96", // 49–53.9
+        60, "#000000"    // ≥ 54 
     ]
   },
 
-  TLBI: {
+
+    TLBI: {
     field: "TLBI",
     title: "Total Living Burden Index",
+    unit: "",
+
     colors: [
-      0.0, "#ffffcc",
-      0.2, "#a1dab4",
-      0.4, "#41b6c4",
-      0.6, "#2c7fb8",
-      0.8, "#253494",
-      1.0, "#081d58"
+        0.00, "#2166ac",  // green
+        0.20, "#67a9cf",  // light green
+        0.40, "#d1e5f0",  // yellow
+        0.60, "#fddbc7",  // orange
+        0.80, "#ef8a62",  // red
+        1.00, "#b2182b"   // deep red (stronger for top range)
     ]
-  }
+    }
+
+
 };

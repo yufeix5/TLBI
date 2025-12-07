@@ -10,7 +10,7 @@ export default function TLBIMap() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
 
-  const [metric, setMetric] = useState<MetricKey>("rent_income_ratio");
+  const [metric, setMetric] = useState<MetricKey>("TLBI");
 
   // weight sliders
   const [wE, setWE] = useState(0.4);
@@ -94,7 +94,7 @@ export default function TLBIMap() {
       container: mapContainer.current,
       style: "mapbox://styles/mapbox/light-v11",
       center: [-73.94, 40.72],
-      zoom: 9,
+      zoom: 9.8,
     });
 
     mapRef.current = map;
