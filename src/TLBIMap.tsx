@@ -82,10 +82,10 @@ export default function TLBIMap() {
       const i = f.properties.food_density ?? NaN;
       const c = f.properties.avg_commute_time ?? NaN;
 
-      const qE = quantileScale(sortedE, e);
-      const qA = quantileScale(sortedA, a);
-      const qI = quantileScale(sortedI, i);
-      const qC = quantileScale(sortedC, c);
+      const qE = quantileScale(sortedE, e);                          // higher - worse
+      const qA = 1 - (quantileScale(sortedA, a) ?? 0);                // higher - better → reverse
+      const qI = 1 - (quantileScale(sortedI, i) ?? 0);                // higher - better → reverse
+      const qC = quantileScale(sortedC, c);                           // higher - worse
 
       // -------- Use normalized weights --------
       f.properties.TLBI =
@@ -387,10 +387,10 @@ export default function TLBIMap() {
         {selectedFeature && (
           <div style={{ marginTop: 18 }}>
             <b>{selectedFeature.Location_x}</b>
-            <p>Econ Burden: {selectedFeature.rent_income_ratio?.toFixed(3)}</p>
-            <p>Park Access: {selectedFeature.park_area_ratio?.toFixed(3)}</p>
-            <p>Food Density: {selectedFeature.food_density?.toFixed(3)}</p>
-            <p>Commute Time: {selectedFeature.avg_commute_time?.toFixed(3)} min</p>
+            <p>Econ Burden: {selectedFeature.rent_income_ratio?.toFixed(3)}%</p>
+            <p>Park Area: {selectedFeature.park_area_ratio?.toFixed(3)}%</p>
+            <p>Food Density: {selectedFeature.food_density?.toFixed(3)} Retail Food Stores per Square KM</p>
+            <p>Average Commute Time: {selectedFeature.avg_commute_time?.toFixed(3)} Minutes</p>
             <p>
               <b>TLBI:</b> {selectedFeature.TLBI?.toFixed(3)}
             </p>
